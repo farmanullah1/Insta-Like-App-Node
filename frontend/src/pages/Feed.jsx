@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
+import { useToast } from "../context/ToastContext";
 
 const Feed = () => {
     const [posts, setPosts] = useState([]);
@@ -9,6 +10,10 @@ const Feed = () => {
     const [likedPosts, setLikedPosts] = useState({});
     const [deletingId, setDeletingId] = useState(null);
     const [searchTerm, setSearchTerm] = useState("");
+    const [sortBy, setSortBy] = useState("newest"); // 'newest', 'oldest', 'most_liked'
+    const [heartBurstId, setHeartBurstId] = useState(null);
+
+    const { showToast, confirmModal } = useToast();
 
     const fetchPosts = async () => {
         try {
@@ -19,6 +24,7 @@ const Feed = () => {
         } catch (err) {
             console.error("Error fetching posts:", err);
             setError(err.message || "Failed to load feed posts.");
+            showToast("Failed to connect to backend feed", "error");
         } finally {
             setLoading(false);
         }
@@ -28,7 +34,18 @@ const Feed = () => {
         fetchPosts();
     }, []);
 
-    const handleLike = async (postId) => {
+    const triggerHeartBurst = (postId) => {
+        setHeartBurstId(postId);
+        setTimeout(() => {
+            setHeartBurstId(null);
+        }, 750);
+    };
+
+    const handleLike = async (postId, triggeredByDoubleClick = false) => {
+        if (triggeredByDoubleClick) {
+            triggerHeartBurst(postId);
+        }
+
         try {
             // Optimistic update
             setPosts((prev) =>
@@ -47,42 +64,81 @@ const Feed = () => {
                     )
                 );
             }
+            if (!triggeredByDoubleClick) {
+                showToast("Post liked! ❤️", "success", 2000);
+            }
         } catch (err) {
             console.error("Error liking post:", err);
+            showToast("Could not like post right now", "error");
         }
     };
 
     const handleDelete = async (postId) => {
-        const confirmed = window.confirm("Are you sure you want to delete this post? This action cannot be undone.");
+        const confirmed = await confirmModal({
+            title: "Delete Post",
+            message: "Are you sure you want to delete this post? This action will permanently remove it.",
+            confirmText: "Delete",
+            cancelText: "Keep",
+            type: "danger",
+        });
+
         if (!confirmed) return;
 
         try {
             setDeletingId(postId);
             await axios.delete(`http://localhost:3000/posts/${postId}`);
             setPosts((prev) => prev.filter((p) => p.id !== postId));
+            showToast("Post deleted successfully", "info");
         } catch (err) {
             console.error("Error deleting post:", err);
-            alert(err.response?.data?.error || "Failed to delete post.");
+            showToast(err.response?.data?.error || "Failed to delete post.", "error");
         } finally {
             setDeletingId(null);
         }
     };
 
+    const handleShare = (post) => {
+        const postUrl = window.location.href;
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(postUrl);
+            showToast("Post link copied to clipboard! 📋", "info");
+        } else {
+            showToast("Link ready to share!", "info");
+        }
+    };
+
     // Filter posts by search term
-    const filteredPosts = posts.filter((post) =>
+    const filtered = posts.filter((post) =>
         (post.Caption || "").toLowerCase().includes(searchTerm.toLowerCase())
     );
+
+    // Sort posts
+    const sortedPosts = [...filtered].sort((a, b) => {
+        if (sortBy === "most_liked") {
+            return (b.Likes || 0) - (a.Likes || 0);
+        }
+        if (sortBy === "oldest") {
+            return (a.id || 0) - (b.id || 0);
+        }
+        // default newest
+        return (b.id || 0) - (a.id || 0);
+    });
 
     return (
         <main className="page-container">
             <div className="feed-header">
-                <h2>Community Feed</h2>
+                <div>
+                    <h2>Community Feed</h2>
+                    <span className="feed-stats-badge">
+                        {posts.length} {posts.length === 1 ? "post" : "posts"} shared
+                    </span>
+                </div>
                 <Link to="/create-post" className="btn btn-primary btn-sm">
                     + New Post
                 </Link>
             </div>
 
-            {/* Search Bar */}
+            {/* Search and Sort Filter Bar */}
             <div className="feed-search-box">
                 <span className="search-icon">🔍</span>
                 <input
@@ -101,6 +157,24 @@ const Feed = () => {
                         ✕
                     </button>
                 )}
+            </div>
+
+            <div className="feed-filter-bar">
+                <span className="feed-stats-badge">
+                    Showing {sortedPosts.length} of {posts.length} results
+                </span>
+                <label style={{ display: "inline-flex", alignItems: "center", gap: "8px", fontSize: "13px" }}>
+                    <span>Sort:</span>
+                    <select
+                        value={sortBy}
+                        onChange={(e) => setSortBy(e.target.value)}
+                        className="feed-sort-select"
+                    >
+                        <option value="newest">🕒 Latest First</option>
+                        <option value="most_liked">🔥 Most Liked</option>
+                        <option value="oldest">📅 Oldest First</option>
+                    </select>
+                </label>
             </div>
 
             {loading && (
@@ -134,7 +208,7 @@ const Feed = () => {
                 </div>
             )}
 
-            {!loading && !error && posts.length > 0 && filteredPosts.length === 0 && (
+            {!loading && !error && posts.length > 0 && sortedPosts.length === 0 && (
                 <div className="empty-state-card">
                     <div className="empty-icon">🔎</div>
                     <h3>No Matching Posts</h3>
@@ -145,9 +219,9 @@ const Feed = () => {
                 </div>
             )}
 
-            {!loading && !error && filteredPosts.length > 0 && (
+            {!loading && !error && sortedPosts.length > 0 && (
                 <section className="feed-stream" aria-label="Posts stream">
-                    {filteredPosts.map((post) => {
+                    {sortedPosts.map((post) => {
                         const imgSrc = post.Image_Url || `http://localhost:3000/posts/${post.id}/image`;
                         const isLiked = Boolean(likedPosts[post.id]);
                         const isDeleting = deletingId === post.id;
@@ -194,7 +268,12 @@ const Feed = () => {
                                     </div>
                                 </div>
 
-                                <div className="post-image-container">
+                                {/* Post Image with Double-Tap to Like */}
+                                <div
+                                    className="post-image-container post-image-wrapper"
+                                    onDoubleClick={() => handleLike(post.id, true)}
+                                    title="Double click photo to like!"
+                                >
                                     <img
                                         src={imgSrc}
                                         alt={post.Caption || "Post image"}
@@ -205,11 +284,14 @@ const Feed = () => {
                                             }
                                         }}
                                     />
+                                    {heartBurstId === post.id && (
+                                        <div className="like-burst">❤️</div>
+                                    )}
                                 </div>
 
                                 <div className="post-card-body">
                                     <div className="post-actions-bar">
-                                        <div className="left-actions">
+                                        <div className="left-actions" style={{ display: "flex", gap: "8px", alignItems: "center" }}>
                                             <button
                                                 type="button"
                                                 onClick={() => handleLike(post.id)}
@@ -219,6 +301,15 @@ const Feed = () => {
                                                 <span>{isLiked ? "❤️" : "🤍"}</span>
                                                 <strong>{post.Likes || 0}</strong>
                                                 <span>{post.Likes === 1 ? "like" : "likes"}</span>
+                                            </button>
+
+                                            <button
+                                                type="button"
+                                                onClick={() => handleShare(post)}
+                                                className="share-btn"
+                                                title="Copy share link"
+                                            >
+                                                📤 Share
                                             </button>
                                         </div>
 
