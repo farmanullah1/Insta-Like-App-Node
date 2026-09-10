@@ -90,35 +90,40 @@ const EditPost = () => {
 
     if (loading) {
         return (
-            <main className="page-container">
-                <div className="feed-status-container">
-                    <div className="feed-spinner"></div>
-                    <p>Loading post details...</p>
-                </div>
+            <main className="max-w-xl mx-auto w-full px-4 py-16 text-center text-slate-500">
+                <div className="w-9 h-9 border-3 border-purple-200 border-t-purple-600 rounded-full animate-spin mx-auto mb-3"></div>
+                <p className="text-sm">Loading post details...</p>
             </main>
         );
     }
 
     return (
-        <main className="page-container">
-            <section className="create-post-card">
-                <div className="card-header">
-                    <h2>Edit Post #{id}</h2>
-                    <p className="card-subtitle">Update your caption or change the picture</p>
+        <main className="max-w-xl mx-auto w-full px-4 py-8 pb-20 flex-1">
+            <section className="bg-white dark:bg-slate-800/95 border border-slate-200/90 dark:border-slate-700/80 rounded-2xl p-6 sm:p-8 shadow-xs">
+                <div className="mb-6">
+                    <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-50 tracking-tight m-0">
+                        Edit Post #{id}
+                    </h2>
+                    <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
+                        Update your caption or replace the photo
+                    </p>
                 </div>
 
                 {error && (
-                    <div className="alert-banner error" role="alert">
+                    <div className="p-3.5 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-300 text-xs sm:text-sm mb-5 flex items-center gap-2">
                         <span>⚠️</span>
-                        <p>{error}</p>
+                        <p className="m-0">{error}</p>
                     </div>
                 )}
 
-                <form className="create-post-form" onSubmit={handleSubmit}>
-                    <div className="form-group">
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                            <label htmlFor="captionInput">Caption</label>
-                            <span style={{ fontSize: "12px", color: caption.length > MAX_CAPTION_LENGTH ? "#ef4444" : "var(--text)" }}>
+                <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+                    {/* Caption Field */}
+                    <div>
+                        <div className="flex justify-between items-center mb-1.5">
+                            <label htmlFor="captionInput" className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                                Caption
+                            </label>
+                            <span className={`text-xs font-medium ${caption.length > MAX_CAPTION_LENGTH ? "text-red-500" : "text-slate-400"}`}>
                                 {caption.length}/{MAX_CAPTION_LENGTH}
                             </span>
                         </div>
@@ -130,37 +135,44 @@ const EditPost = () => {
                             placeholder="Write an engaging caption..."
                             value={caption}
                             onChange={(e) => setCaption(e.target.value)}
+                            className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900/60 text-slate-900 dark:text-slate-100 rounded-xl border border-slate-200 dark:border-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-500 transition-all placeholder:text-slate-400 resize-y"
                             required
                         />
                     </div>
 
-                    <div className="form-group">
-                        <label>Post Photo</label>
-                        <div className="upload-dropzone">
-                            <div className="image-preview-wrapper">
+                    {/* Image Preview & Replacement */}
+                    <div>
+                        <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
+                            Post Photo
+                        </label>
+                        <div className="border border-slate-200 dark:border-slate-700 rounded-2xl overflow-hidden bg-slate-50 dark:bg-slate-900/50">
+                            <div className="relative w-full max-h-96 flex items-center justify-center bg-black">
                                 <img
                                     src={preview || currentImage}
                                     alt="Current or new preview"
-                                    className="preview-img"
+                                    className="w-full max-h-96 object-contain block"
                                 />
                                 {preview && (
                                     <button
                                         type="button"
-                                        className="remove-preview-btn"
                                         onClick={() => {
                                             setPreview(null);
                                             const fileInput = document.getElementById("editImageInput");
                                             if (fileInput) fileInput.value = "";
                                             showToast("Reverted to previous photo", "info", 1500);
                                         }}
+                                        className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/70 hover:bg-rose-600 text-white flex items-center justify-center text-sm transition-colors cursor-pointer"
                                         title="Revert to original photo"
                                     >
                                         ✕
                                     </button>
                                 )}
                             </div>
-                            <div style={{ padding: "14px", textAlign: "center" }}>
-                                <label htmlFor="editImageInput" className="btn btn-secondary btn-sm" style={{ cursor: "pointer" }}>
+                            <div className="p-3.5 text-center bg-white dark:bg-slate-800/80 border-t border-slate-100 dark:border-slate-700/60">
+                                <label
+                                    htmlFor="editImageInput"
+                                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-700/60 hover:bg-slate-200 cursor-pointer transition-colors"
+                                >
                                     📷 Replace Photo (Optional)
                                 </label>
                                 <input
@@ -169,20 +181,28 @@ const EditPost = () => {
                                     name="image"
                                     accept="image/*"
                                     onChange={handleFileChange}
-                                    className="visually-hidden-input"
+                                    className="hidden"
                                 />
                             </div>
                         </div>
                     </div>
 
-                    <div className="form-actions">
-                        <Link to="/feed" className="btn btn-secondary">
+                    {/* Action Buttons */}
+                    <div className="flex items-center justify-end gap-3 pt-2">
+                        <Link
+                            to="/feed"
+                            className="px-4 py-2 text-sm font-semibold rounded-xl text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-700/60 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                        >
                             Cancel
                         </Link>
-                        <button type="submit" className="btn btn-primary" disabled={saving || !caption.trim()}>
+                        <button
+                            type="submit"
+                            disabled={saving || !caption.trim()}
+                            className="inline-flex items-center gap-2 px-5 py-2 text-sm font-semibold rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md hover:opacity-95 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95"
+                        >
                             {saving ? (
                                 <>
-                                    <span className="spinner"></span>
+                                    <span className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin"></span>
                                     Saving Changes...
                                 </>
                             ) : (
