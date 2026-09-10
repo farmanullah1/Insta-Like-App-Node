@@ -73,12 +73,11 @@ async function connectToDatabase() {
                 BEGIN
                     ALTER TABLE Posts ADD CreatedAt DATETIME NOT NULL DEFAULT GETDATE();
                 END
+                ALTER TABLE Posts ALTER COLUMN Post_Image VARBINARY(MAX) NULL;
             END
-            ALTER TABLE Posts ALTER COLUMN Post_Image VARBINARY(MAX) NULL;
-        END
 
-        IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'Comments')
-        BEGIN
+            IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'Comments')
+            BEGIN
             CREATE TABLE Comments (
                 id INT IDENTITY(1,1) PRIMARY KEY,
                 PostId INT NOT NULL,
