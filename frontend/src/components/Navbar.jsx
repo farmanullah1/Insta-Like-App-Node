@@ -36,6 +36,38 @@ const Navbar = () => {
                     </Link>
 
                     <Link
+                        to="/explore"
+                        className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-medium transition-all duration-150 ${
+                            location.pathname === "/explore"
+                                ? "bg-purple-100 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300 shadow-xs"
+                                : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800"
+                        }`}
+                        title="Explore Gallery"
+                    >
+                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <circle cx="12" cy="12" r="10"/>
+                            <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/>
+                        </svg>
+                        <span>Explore</span>
+                    </Link>
+
+                    <Link
+                        to="/profile"
+                        className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-medium transition-all duration-150 ${
+                            location.pathname === "/profile"
+                                ? "bg-purple-100 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300 shadow-xs"
+                                : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800"
+                        }`}
+                        title="Profile"
+                    >
+                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
+                            <circle cx="12" cy="7" r="4"/>
+                        </svg>
+                        <span>Profile</span>
+                    </Link>
+
+                    <Link
                         to="/create-post"
                         className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-medium transition-all duration-150 ${
                             location.pathname === "/create-post"

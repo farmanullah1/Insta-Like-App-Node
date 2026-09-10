@@ -4,6 +4,8 @@ import Navbar from "./components/Navbar";
 import CreatePost from "./pages/CreatePost";
 import EditPost from "./pages/EditPost";
 import Feed from "./pages/Feed";
+import Explore from "./pages/Explore";
+import Profile from "./pages/Profile";
 import { ToastProvider } from "./context/ToastContext";
 import "./App.css";
 
@@ -16,6 +18,8 @@ export const App = () => {
           <Routes>
             <Route path="/" element={<Navigate to="/feed" replace />} />
             <Route path="/feed" element={<Feed />} />
+            <Route path="/explore" element={<Explore />} />
+            <Route path="/profile" element={<Profile />} />
             <Route path="/create-post" element={<CreatePost />} />
             <Route path="/edit-post/:id" element={<EditPost />} />
             <Route path="*" element={<Navigate to="/feed" replace />} />
