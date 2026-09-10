@@ -12,6 +12,10 @@ const Navbar = () => {
                     <span className="font-extrabold text-xl tracking-tight bg-gradient-to-r from-purple-600 via-pink-500 to-rose-500 bg-clip-text text-transparent">
                         InstaLike
                     </span>
+                    <span className="relative flex h-2 w-2 ml-0.5">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                    </span>
                 </Link>
 
                 <nav className="flex items-center gap-2">
