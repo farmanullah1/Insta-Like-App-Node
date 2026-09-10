@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
 import { useToast } from "../context/ToastContext";
+import CommentsSection from "../components/CommentsSection";
 
 const Feed = () => {
     const [posts, setPosts] = useState([]);
@@ -374,6 +375,9 @@ const Feed = () => {
                                         </strong>
                                         {post.Caption}
                                     </p>
+
+                                    {/* Comments Section (Full CRUD) */}
+                                    <CommentsSection postId={post.id} />
                                 </div>
                             </article>
                         );
