@@ -1,10 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import axios from "axios";
+import { useToast } from "../context/ToastContext";
+
+const MAX_CAPTION_LENGTH = 300;
+const MAX_FILE_SIZE_MB = 10;
 
 const EditPost = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const { showToast } = useToast();
 
     const [caption, setCaption] = useState("");
     const [currentImage, setCurrentImage] = useState("");
@@ -24,6 +29,7 @@ const EditPost = () => {
             } catch (err) {
                 console.error("Error fetching post:", err);
                 setError("Could not load post details.");
+                showToast("Failed to load post details", "error");
             } finally {
                 setLoading(false);
             }
@@ -35,7 +41,16 @@ const EditPost = () => {
     const handleFileChange = (e) => {
         const file = e.target.files[0];
         if (file) {
+            if (!file.type.startsWith("image/")) {
+                showToast("Please choose a valid image file.", "error");
+                return;
+            }
+            if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
+                showToast(`Image too large! Maximum allowed size is ${MAX_FILE_SIZE_MB}MB.`, "warning");
+                return;
+            }
             setPreview(URL.createObjectURL(file));
+            showToast("New image chosen! Ready to update. 📷", "info", 2000);
         } else {
             setPreview(null);
         }
@@ -44,6 +59,12 @@ const EditPost = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError(null);
+
+        if (!caption.trim()) {
+            showToast("Caption cannot be empty.", "warning");
+            return;
+        }
+
         const formElement = e.target;
         const formData = new FormData(formElement);
 
@@ -52,13 +73,16 @@ const EditPost = () => {
             const res = await axios.put(`http://localhost:3000/posts/${id}`, formData);
 
             if (res.status === 200) {
+                showToast("Post updated successfully! ✨", "success");
                 navigate("/feed");
             } else {
                 throw new Error("Failed to update post");
             }
         } catch (err) {
             console.error("Error updating post:", err);
-            setError(err.response?.data?.error || err.message || "Failed to update post.");
+            const msg = err.response?.data?.error || err.message || "Failed to update post.";
+            setError(msg);
+            showToast(msg, "error");
         } finally {
             setSaving(false);
         }
@@ -92,11 +116,17 @@ const EditPost = () => {
 
                 <form className="create-post-form" onSubmit={handleSubmit}>
                     <div className="form-group">
-                        <label htmlFor="captionInput">Caption</label>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                            <label htmlFor="captionInput">Caption</label>
+                            <span style={{ fontSize: "12px", color: caption.length > MAX_CAPTION_LENGTH ? "#ef4444" : "var(--text)" }}>
+                                {caption.length}/{MAX_CAPTION_LENGTH}
+                            </span>
+                        </div>
                         <textarea
                             id="captionInput"
                             name="caption"
                             rows="3"
+                            maxLength={MAX_CAPTION_LENGTH}
                             placeholder="Write an engaging caption..."
                             value={caption}
                             onChange={(e) => setCaption(e.target.value)}
@@ -121,6 +151,7 @@ const EditPost = () => {
                                             setPreview(null);
                                             const fileInput = document.getElementById("editImageInput");
                                             if (fileInput) fileInput.value = "";
+                                            showToast("Reverted to previous photo", "info", 1500);
                                         }}
                                         title="Revert to original photo"
                                     >
@@ -148,7 +179,7 @@ const EditPost = () => {
                         <Link to="/feed" className="btn btn-secondary">
                             Cancel
                         </Link>
-                        <button type="submit" className="btn btn-primary" disabled={saving}>
+                        <button type="submit" className="btn btn-primary" disabled={saving || !caption.trim()}>
                             {saving ? (
                                 <>
                                     <span className="spinner"></span>
