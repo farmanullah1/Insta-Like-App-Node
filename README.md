@@ -1,17 +1,28 @@
 # 📸 InstaLike App
 
-A full-stack Instagram-like social media application built with **React**, **Node.js / Express**, **Microsoft SQL Server (MSSQL)**, and **ImageKit CDN**.
+A production-grade, full-stack Instagram-like social media application built with **React**, **Node.js & Express**, **Microsoft SQL Server (MSSQL)**, and **ImageKit CDN**.
 
 ---
 
-## 🚀 Features
+## 🚀 Key Features
 
-- **Photo Uploads**: Multi-part image uploads handled via `multer` (memory storage) and uploaded directly to **ImageKit CDN**.
-- **MSSQL Database Storage**: Robust persistence storing captions, timestamps, and ImageKit CDN URLs directly in Microsoft SQL Server, with automatic table initialization and schema migration.
-- **Dynamic Community Feed**: Real-time post feed with creator avatars, timestamps, high-resolution original image previews, and interactive like buttons.
-- **Live Preview Dropzone**: Previews selected photos instantly in the browser before publishing.
-- **Responsive Modern UI**: Glassmorphism sticky navbar, smooth card animations, and full **Dark Mode & Light Mode** support based on system preferences.
-- **RESTful API**: Full CRUD endpoints for creating, reading, updating, and deleting posts.
+- **Create Posts (Create)**:
+  - Supports live image preview before submission.
+  - Multi-part upload via `multer` memory buffer directly to **ImageKit CDN**.
+  - Persists CDN URLs, post captions, timestamps, and like counts to **MSSQL**.
+- **Community Feed (Read)**:
+  - Real-time feed stream with author avatars, relative timestamps, and high-res image rendering.
+  - Automatic fallback mechanism ensuring images render seamlessly from either ImageKit CDN or SQL Server binary streams.
+- **Search Filter**: Instant client-side search bar allowing users to filter posts by caption in real-time.
+- **Edit Posts (Update)**:
+  - Dedicated `/edit-post/:id` route allowing users to modify their captions or replace existing photos.
+  - Previews new image selections while retaining the current photo until saved.
+- **Delete Posts (Delete)**:
+  - Confirmation-guarded deletion removing posts directly from the database and updating the feed without reloading.
+- **Interactive Likes**:
+  - Heart button with optimistic UI updates and persistent counter increments stored in SQL Server via `PATCH /posts/:id/like`.
+- **Responsive Aesthetics**:
+  - Sticky glassmorphism header, card hover elevations, loading skeletons, and automatic **Dark/Light Mode** support.
 
 ---
 
@@ -28,7 +39,7 @@ A full-stack Instagram-like social media application built with **React**, **Nod
 - **Database**: Microsoft SQL Server (`mssql` + `msnodesqlv8` Windows authentication)
 - **File Uploads**: Multer
 - **Media CDN**: ImageKit Node.js SDK (`@imagekit/nodejs`)
-- **CORS**: Cross-Origin Resource Sharing enabled for Vite dev server
+- **CORS**: Cross-Origin Resource Sharing enabled for frontend client on port 5173
 
 ---
 
@@ -38,26 +49,27 @@ A full-stack Instagram-like social media application built with **React**, **Nod
 insta-like-app/
 ├── backend/
 │   ├── src/
-│   │   ├── app.js               # Express app routes & middleware
+│   │   ├── app.js                 # Express routes, CORS & Multer middleware
 │   │   ├── db/
-│   │   │   └── db.js            # MSSQL connection & schema setup
+│   │   │   └── db.js              # MSSQL connection & schema migrations
 │   │   ├── models/
-│   │   │   └── post.model.js    # Database query operations
+│   │   │   └── post.model.js      # Full CRUD queries (Create, Read, Update, Delete, Like)
 │   │   └── servicers/
-│   │       └── storage.service.js # ImageKit upload integration
-│   ├── .env.example             # Environment variables template
+│   │       └── storage.service.js # ImageKit SDK integration
+│   ├── .env.example               # Environment variables template
 │   ├── package.json
-│   └── server.js                # Server entry point
+│   └── server.js                  # Backend server entry point
 ├── frontend/
 │   ├── src/
 │   │   ├── components/
-│   │   │   └── Navbar.jsx       # Header with navigation & branding
+│   │   │   └── Navbar.jsx         # Sticky header with navigation links
 │   │   ├── pages/
-│   │   │   ├── CreatePost.jsx   # Post creation with live preview
-│   │   │   └── Feed.jsx         # Feed view with post cards
-│   │   ├── App.css              # Custom responsive stylesheet
-│   │   ├── App.jsx              # App layout and route definitions
-│   │   ├── index.css            # CSS variables & typography tokens
+│   │   │   ├── CreatePost.jsx     # Post creation with live preview
+│   │   │   ├── EditPost.jsx       # Post editing with image replacement
+│   │   │   └── Feed.jsx           # Feed stream with search, like, edit, and delete
+│   │   ├── App.css                # Component stylesheets & animations
+│   │   ├── App.jsx                # Application routing layout
+│   │   ├── index.css              # Typography & color design tokens
 │   │   └── main.jsx
 │   ├── package.json
 │   └── vite.config.js
@@ -72,13 +84,13 @@ insta-like-app/
 ### Prerequisites
 - [Node.js](https://nodejs.org/) (v18+)
 - [Microsoft SQL Server](https://www.microsoft.com/en-us/sql-server) installed with Windows Authentication
-- An [ImageKit](https://imagekit.io/) account for media CDN storage
+- An [ImageKit](https://imagekit.io/) account
 
 ---
 
 ### 1. Backend Setup
 
-1. Navigate to the `backend` folder:
+1. Open a terminal and navigate to `backend`:
    ```bash
    cd backend
    ```
@@ -108,13 +120,13 @@ insta-like-app/
    ```bash
    npm run dev
    ```
-   *The server will start at `http://localhost:3000` and automatically verify/create the `Posts` table in MSSQL.*
+   *The server will boot on `http://localhost:3000` and automatically verify/migrate the `Posts` table.*
 
 ---
 
 ### 2. Frontend Setup
 
-1. Open a new terminal and navigate to the `frontend` folder:
+1. Open a second terminal and navigate to `frontend`:
    ```bash
    cd frontend
    ```
@@ -128,7 +140,7 @@ insta-like-app/
    ```bash
    npm run dev
    ```
-   *Open your browser and navigate to `http://localhost:5173`.*
+   *The frontend will launch at `http://localhost:5173`.*
 
 ---
 
@@ -139,9 +151,10 @@ insta-like-app/
 | `GET` | `/posts` | Retrieve all posts ordered by newest first |
 | `POST` | `/posts` | Create a new post (`multipart/form-data` with `image` and `caption`) |
 | `GET` | `/posts/:id` | Get single post details by ID |
-| `GET` | `/posts/:id/image` | Stream raw binary image directly from SQL Server |
 | `PUT` | `/posts/:id` | Update post caption or replace image |
-| `DELETE` | `/posts/:id` | Remove a post by ID |
+| `DELETE` | `/posts/:id` | Delete a post by ID |
+| `PATCH` | `/posts/:id/like` | Increment post like count |
+| `GET` | `/posts/:id/image` | Stream raw binary image fallback directly from MSSQL |
 
 ---
 

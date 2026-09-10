@@ -76,7 +76,20 @@ app.delete('/posts/:id', async (req, res) => {
         const id = parseInt(req.params.id);
         const deleted = await postModel.deletePost(id);
         if (!deleted) return res.status(404).json({ error: 'Post not found' });
-        res.json({ message: 'Post deleted' });
+        res.json({ message: 'Post deleted successfully', id });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Like a post (increment like count)
+app.patch('/posts/:id/like', async (req, res) => {
+    try {
+        const id = parseInt(req.params.id);
+        const updated = await postModel.likePost(id);
+        if (!updated) return res.status(404).json({ error: 'Post not found' });
+        res.json(updated);
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Internal server error' });

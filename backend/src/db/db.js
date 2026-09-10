@@ -54,7 +54,9 @@ async function connectToDatabase() {
                     id INT IDENTITY(1,1) PRIMARY KEY,
                     Post_Image VARBINARY(MAX) NULL,
                     Caption NVARCHAR(255) NOT NULL,
-                    Image_Url NVARCHAR(MAX) NULL
+                    Image_Url NVARCHAR(MAX) NULL,
+                    Likes INT NOT NULL DEFAULT 0,
+                    CreatedAt DATETIME NOT NULL DEFAULT GETDATE()
                 );
             END
             ELSE
@@ -62,6 +64,14 @@ async function connectToDatabase() {
                 IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Posts' AND COLUMN_NAME = 'Image_Url')
                 BEGIN
                     ALTER TABLE Posts ADD Image_Url NVARCHAR(MAX) NULL;
+                END
+                IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Posts' AND COLUMN_NAME = 'Likes')
+                BEGIN
+                    ALTER TABLE Posts ADD Likes INT NOT NULL DEFAULT 0;
+                END
+                IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Posts' AND COLUMN_NAME = 'CreatedAt')
+                BEGIN
+                    ALTER TABLE Posts ADD CreatedAt DATETIME NOT NULL DEFAULT GETDATE();
                 END
                 ALTER TABLE Posts ALTER COLUMN Post_Image VARBINARY(MAX) NULL;
             END
