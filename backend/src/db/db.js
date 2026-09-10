@@ -73,10 +73,23 @@ async function connectToDatabase() {
                 BEGIN
                     ALTER TABLE Posts ADD CreatedAt DATETIME NOT NULL DEFAULT GETDATE();
                 END
-                ALTER TABLE Posts ALTER COLUMN Post_Image VARBINARY(MAX) NULL;
             END
-        `);
-        console.log("Table 'Posts' ensured.");
+            ALTER TABLE Posts ALTER COLUMN Post_Image VARBINARY(MAX) NULL;
+        END
+
+        IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'Comments')
+        BEGIN
+            CREATE TABLE Comments (
+                id INT IDENTITY(1,1) PRIMARY KEY,
+                PostId INT NOT NULL,
+                Author NVARCHAR(100) NOT NULL DEFAULT 'Community Member',
+                Text NVARCHAR(500) NOT NULL,
+                CreatedAt DATETIME NOT NULL DEFAULT GETDATE(),
+                CONSTRAINT FK_Comments_Posts FOREIGN KEY (PostId) REFERENCES Posts(id) ON DELETE CASCADE
+            );
+        END
+    `);
+    console.log("Tables 'Posts' and 'Comments' ensured.");
         return pool;
     } catch (error) {
         console.error("Database connection/setup failed:", error);

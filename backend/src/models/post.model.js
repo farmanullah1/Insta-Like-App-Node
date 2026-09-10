@@ -106,6 +106,51 @@ async function likePost(id) {
     return result.recordset[0] || null;
 }
 
+// ---------- Comments CRUD Operations ----------
+
+// Get comments for a post
+async function getCommentsByPostId(postId) {
+    const pool = await getConnection();
+    const request = pool.request();
+    request.input('postId', sql.Int, postId);
+
+    const result = await request.query(`
+        SELECT id, PostId, Author, Text, CreatedAt
+        FROM Comments
+        WHERE PostId = @postId
+        ORDER BY id ASC
+    `);
+    return result.recordset;
+}
+
+// Add a comment to a post
+async function addComment(postId, text, author = 'Community Member') {
+    const pool = await getConnection();
+    const request = pool.request();
+    request.input('postId', sql.Int, postId);
+    request.input('author', sql.NVarChar(100), author);
+    request.input('text', sql.NVarChar(500), text);
+
+    const result = await request.query(`
+        INSERT INTO Comments (PostId, Author, Text, CreatedAt)
+        OUTPUT INSERTED.id, INSERTED.PostId, INSERTED.Author, INSERTED.Text, INSERTED.CreatedAt
+        VALUES (@postId, @author, @text, GETDATE())
+    `);
+    return result.recordset[0];
+}
+
+// Delete a comment
+async function deleteComment(commentId) {
+    const pool = await getConnection();
+    const request = pool.request();
+    request.input('id', sql.Int, commentId);
+
+    const result = await request.query(`
+        DELETE FROM Comments WHERE id = @id
+    `);
+    return result.rowsAffected[0] > 0;
+}
+
 // ---------- Export all functions ----------
 module.exports = {
     createPost,
@@ -114,4 +159,7 @@ module.exports = {
     updatePost,
     deletePost,
     likePost,
+    getCommentsByPostId,
+    addComment,
+    deleteComment,
 };

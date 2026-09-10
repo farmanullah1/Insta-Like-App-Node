@@ -142,6 +142,51 @@ app.put('/posts/:id', upload.any(), async (req, res) => {
     }
 });
 
+// ---------- Comments Routes ----------
+
+// Get all comments for a post
+app.get('/posts/:id/comments', async (req, res) => {
+    try {
+        const postId = parseInt(req.params.id);
+        const comments = await postModel.getCommentsByPostId(postId);
+        res.json(comments);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Add a comment to a post
+app.post('/posts/:id/comments', async (req, res) => {
+    try {
+        const postId = parseInt(req.params.id);
+        const { text, author } = req.body;
+
+        if (!text || !text.trim()) {
+            return res.status(400).json({ error: 'Comment text cannot be empty' });
+        }
+
+        const newComment = await postModel.addComment(postId, text.trim(), author?.trim() || 'Community Member');
+        res.status(201).json(newComment);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Delete a comment
+app.delete('/comments/:id', async (req, res) => {
+    try {
+        const commentId = parseInt(req.params.id);
+        const deleted = await postModel.deleteComment(commentId);
+        if (!deleted) return res.status(404).json({ error: 'Comment not found' });
+        res.json({ message: 'Comment deleted successfully', id: commentId });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
 // Existing root route
 app.get('/', (req, res) => {
     res.send('Hello World!');
