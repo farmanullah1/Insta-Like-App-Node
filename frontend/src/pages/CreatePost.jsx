@@ -58,7 +58,6 @@ const CreatePost = () => {
         if (file) {
             const input = document.getElementById("postImageInput");
             if (input) {
-                // Bind to file input via DataTransfer
                 const dataTransfer = new DataTransfer();
                 dataTransfer.items.add(file);
                 input.files = dataTransfer.files;
@@ -100,25 +99,33 @@ const CreatePost = () => {
     };
 
     return (
-        <main className="page-container">
-            <section className="create-post-card">
-                <div className="card-header">
-                    <h2>Create New Post</h2>
-                    <p className="card-subtitle">Share your favorite moments with captions & tags</p>
+        <main className="max-w-xl mx-auto w-full px-4 py-8 pb-20 flex-1">
+            <section className="bg-white dark:bg-slate-800/95 border border-slate-200/90 dark:border-slate-700/80 rounded-2xl p-6 sm:p-8 shadow-xs">
+                {/* Header */}
+                <div className="mb-6">
+                    <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-50 tracking-tight m-0">
+                        Create New Post
+                    </h2>
+                    <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
+                        Share your moments and captions with the community
+                    </p>
                 </div>
 
                 {error && (
-                    <div className="alert-banner error" role="alert">
+                    <div className="p-3.5 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-300 text-xs sm:text-sm mb-5 flex items-center gap-2">
                         <span>⚠️</span>
-                        <p>{error}</p>
+                        <p className="m-0">{error}</p>
                     </div>
                 )}
 
-                <form className="create-post-form" onSubmit={handleSubmit}>
-                    <div className="form-group">
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                            <label htmlFor="captionInput">Caption</label>
-                            <span style={{ fontSize: "12px", color: caption.length > MAX_CAPTION_LENGTH ? "#ef4444" : "var(--text)" }}>
+                <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+                    {/* Caption Field */}
+                    <div>
+                        <div className="flex justify-between items-center mb-1.5">
+                            <label htmlFor="captionInput" className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                                Caption
+                            </label>
+                            <span className={`text-xs font-medium ${caption.length > MAX_CAPTION_LENGTH ? "text-red-500" : "text-slate-400"}`}>
                                 {caption.length}/{MAX_CAPTION_LENGTH}
                             </span>
                         </div>
@@ -130,46 +137,52 @@ const CreatePost = () => {
                             placeholder="Write an engaging caption... (e.g. Sunset in the mountains #nature)"
                             value={caption}
                             onChange={(e) => setCaption(e.target.value)}
+                            className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900/60 text-slate-900 dark:text-slate-100 rounded-xl border border-slate-200 dark:border-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-500 transition-all placeholder:text-slate-400 resize-y"
                             required
                         />
                     </div>
 
-                    <div className="form-group">
-                        <label>Photo Upload</label>
+                    {/* Image Upload Dropzone */}
+                    <div>
+                        <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
+                            Photo Upload
+                        </label>
                         <div
-                            className={`upload-dropzone ${isDragging ? "dragging" : ""}`}
                             onDragOver={handleDragOver}
                             onDragLeave={handleDragLeave}
                             onDrop={handleDrop}
-                            style={{
-                                borderColor: isDragging ? "var(--accent)" : undefined,
-                                background: isDragging ? "var(--accent-bg)" : undefined,
-                            }}
+                            className={`relative border-2 border-dashed rounded-2xl overflow-hidden transition-all duration-150 ${
+                                isDragging
+                                    ? "border-purple-500 bg-purple-50/60 dark:bg-purple-950/20"
+                                    : "border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 hover:border-purple-400"
+                            }`}
                         >
                             {preview ? (
-                                <div className="image-preview-wrapper">
-                                    <img src={preview} alt="Upload preview" className="preview-img" />
+                                <div className="relative w-full max-h-96 flex items-center justify-center bg-black">
+                                    <img src={preview} alt="Upload preview" className="w-full max-h-96 object-contain block" />
                                     <button
                                         type="button"
-                                        className="remove-preview-btn"
                                         onClick={() => {
                                             setPreview(null);
                                             const fileInput = document.getElementById("postImageInput");
                                             if (fileInput) fileInput.value = "";
                                             showToast("Photo removed", "info", 1500);
                                         }}
+                                        className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/70 hover:bg-rose-600 text-white flex items-center justify-center text-sm transition-colors cursor-pointer"
                                         aria-label="Remove image"
                                     >
                                         ✕
                                     </button>
                                 </div>
                             ) : (
-                                <label htmlFor="postImageInput" className="dropzone-label">
-                                    <div className="dropzone-icon">🖼️</div>
-                                    <div className="dropzone-text">
-                                        <strong>Click or drag & drop photo here</strong>
-                                        <span>Supports JPG, PNG, WEBP (Max 10MB)</span>
-                                    </div>
+                                <label htmlFor="postImageInput" className="flex flex-col items-center justify-center py-10 px-4 cursor-pointer text-center">
+                                    <div className="text-4xl mb-2">🖼️</div>
+                                    <strong className="block text-sm font-semibold text-slate-800 dark:text-slate-200 mb-1">
+                                        Click or drag & drop photo here
+                                    </strong>
+                                    <span className="text-xs text-slate-400">
+                                        Supports JPG, PNG, WEBP (Max {MAX_FILE_SIZE_MB}MB)
+                                    </span>
                                 </label>
                             )}
                             <input
@@ -179,23 +192,27 @@ const CreatePost = () => {
                                 accept="image/*"
                                 onChange={handleFileChange}
                                 required={!preview}
-                                className="visually-hidden-input"
+                                className="hidden"
                             />
                         </div>
                     </div>
 
-                    <div className="form-actions">
-                        <Link to="/feed" className="btn btn-secondary">
+                    {/* Action Buttons */}
+                    <div className="flex items-center justify-end gap-3 pt-2">
+                        <Link
+                            to="/feed"
+                            className="px-4 py-2 text-sm font-semibold rounded-xl text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-700/60 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                        >
                             Cancel
                         </Link>
                         <button
                             type="submit"
-                            className="btn btn-primary"
                             disabled={submitting || !caption.trim() || (!preview && !document.getElementById("postImageInput")?.files?.length)}
+                            className="inline-flex items-center gap-2 px-5 py-2 text-sm font-semibold rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md hover:opacity-95 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95"
                         >
                             {submitting ? (
                                 <>
-                                    <span className="spinner"></span>
+                                    <span className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin"></span>
                                     Uploading to ImageKit...
                                 </>
                             ) : (
