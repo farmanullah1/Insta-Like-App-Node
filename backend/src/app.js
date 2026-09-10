@@ -227,6 +227,40 @@ app.delete('/comments/:id', async (req, res) => {
     }
 });
 
+// ---------- User Profile & Stats Routes ----------
+
+// Get user profile from database
+app.get('/profile', async (req, res) => {
+    try {
+        const profile = await postModel.getUserProfile();
+        res.json(profile || {
+            Username: 'creative_user',
+            FullName: 'InstaLike Creator',
+            Bio: 'Sharing authentic visual stories with the community.'
+        });
+    } catch (error) {
+        console.error('Error fetching profile:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Update user profile in database
+app.put('/profile', async (req, res) => {
+    try {
+        const { username, fullName, bio, avatarUrl } = req.body;
+        const updated = await postModel.updateUserProfile({
+            username: username?.trim(),
+            fullName: fullName?.trim(),
+            bio: bio?.trim(),
+            avatarUrl: avatarUrl?.trim()
+        });
+        res.json(updated);
+    } catch (error) {
+        console.error('Error updating profile:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
 // Existing root route
 app.get('/', (req, res) => {
     res.send('Hello World!');

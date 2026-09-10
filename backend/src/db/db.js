@@ -78,17 +78,31 @@ async function connectToDatabase() {
 
             IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'Comments')
             BEGIN
-            CREATE TABLE Comments (
-                id INT IDENTITY(1,1) PRIMARY KEY,
-                PostId INT NOT NULL,
-                Author NVARCHAR(100) NOT NULL DEFAULT 'Community Member',
-                Text NVARCHAR(500) NOT NULL,
-                CreatedAt DATETIME NOT NULL DEFAULT GETDATE(),
-                CONSTRAINT FK_Comments_Posts FOREIGN KEY (PostId) REFERENCES Posts(id) ON DELETE CASCADE
-            );
-        END
-    `);
-    console.log("Tables 'Posts' and 'Comments' ensured.");
+                CREATE TABLE Comments (
+                    id INT IDENTITY(1,1) PRIMARY KEY,
+                    PostId INT NOT NULL,
+                    Author NVARCHAR(100) NOT NULL DEFAULT 'Community Member',
+                    Text NVARCHAR(500) NOT NULL,
+                    CreatedAt DATETIME NOT NULL DEFAULT GETDATE(),
+                    CONSTRAINT FK_Comments_Posts FOREIGN KEY (PostId) REFERENCES Posts(id) ON DELETE CASCADE
+                );
+            END
+
+            IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'UserProfile')
+            BEGIN
+                CREATE TABLE UserProfile (
+                    id INT PRIMARY KEY DEFAULT 1,
+                    Username NVARCHAR(50) NOT NULL DEFAULT 'farman_creative',
+                    FullName NVARCHAR(100) NOT NULL DEFAULT 'Farman Ullah',
+                    Bio NVARCHAR(300) NOT NULL DEFAULT 'Visual creator & photographer ✨ Capturing life, code, and aesthetics with the community.',
+                    AvatarUrl NVARCHAR(MAX) NULL,
+                    UpdatedAt DATETIME NOT NULL DEFAULT GETDATE()
+                );
+                INSERT INTO UserProfile (id, Username, FullName, Bio, UpdatedAt)
+                VALUES (1, 'farman_creative', 'Farman Ullah', 'Visual creator & photographer ✨ Capturing life, code, and aesthetics with the community.', GETDATE());
+            END
+        `);
+        console.log("Tables 'Posts', 'Comments', and 'UserProfile' ensured.");
         return pool;
     } catch (error) {
         console.error("Database connection/setup failed:", error);

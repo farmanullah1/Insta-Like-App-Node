@@ -1,39 +1,75 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
+import { useToast } from "../context/ToastContext";
 
 const Profile = () => {
     const [posts, setPosts] = useState([]);
+    const [profile, setProfile] = useState({
+        Username: "farman_creative",
+        FullName: "Farman Ullah",
+        Bio: "Visual creator & photographer ✨ Capturing life, code, and aesthetics with the community.",
+    });
     const [loading, setLoading] = useState(true);
-    const [bio, setBio] = useState(() => localStorage.getItem("user_bio") || "Photographer & Digital Creator ✨ Sharing favorite moments with the InstaLike community.");
-    const [isEditingBio, setIsEditingBio] = useState(false);
-    const [bioDraft, setBioDraft] = useState(bio);
-    const [username] = useState("creative_user");
+    const [isEditing, setIsEditing] = useState(false);
+    const [formData, setFormData] = useState({
+        username: "",
+        fullName: "",
+        bio: "",
+    });
+    const [saving, setSaving] = useState(false);
+
+    const { showToast } = useToast();
+
+    const fetchProfileData = async () => {
+        try {
+            setLoading(true);
+            const [postsRes, profileRes] = await Promise.all([
+                axios.get("http://localhost:3000/posts"),
+                axios.get("http://localhost:3000/profile").catch(() => null),
+            ]);
+
+            setPosts(Array.isArray(postsRes.data) ? postsRes.data : []);
+            if (profileRes?.data) {
+                setProfile(profileRes.data);
+                setFormData({
+                    username: profileRes.data.Username || "",
+                    fullName: profileRes.data.FullName || "",
+                    bio: profileRes.data.Bio || "",
+                });
+            }
+        } catch (err) {
+            console.error("Error fetching profile data:", err);
+            showToast("Failed to load profile details", "error");
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
-        const fetchUserPosts = async () => {
-            try {
-                setLoading(true);
-                const res = await axios.get("http://localhost:3000/posts");
-                setPosts(Array.isArray(res.data) ? res.data : []);
-            } catch (err) {
-                console.error("Error fetching profile posts:", err);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchUserPosts();
+        fetchProfileData();
     }, []);
 
-    const handleSaveBio = (e) => {
+    const handleSaveProfile = async (e) => {
         e.preventDefault();
-        setBio(bioDraft);
-        localStorage.setItem("user_bio", bioDraft);
-        setIsEditingBio(false);
+        try {
+            setSaving(true);
+            const res = await axios.put("http://localhost:3000/profile", formData);
+            if (res.status === 200) {
+                setProfile(res.data);
+                setIsEditing(false);
+                showToast("Profile updated successfully! ✨", "success");
+            }
+        } catch (err) {
+            console.error("Error updating profile:", err);
+            showToast("Could not update profile right now", "error");
+        } finally {
+            setSaving(false);
+        }
     };
 
     const totalLikes = posts.reduce((sum, p) => sum + (p.Likes || 0), 0);
+    const totalComments = posts.reduce((sum, p) => sum + (p.CommentsCount || 0), 0);
 
     return (
         <main className="max-w-3xl mx-auto w-full px-4 py-8 pb-24 flex-1">
@@ -43,7 +79,7 @@ const Profile = () => {
                     {/* Avatar with Gradient Ring */}
                     <div className="relative p-1 rounded-full bg-gradient-to-tr from-purple-600 via-pink-500 to-rose-500 shadow-md">
                         <div className="w-24 h-24 rounded-full bg-slate-900 text-white flex items-center justify-center text-3xl font-bold">
-                            📸
+                            {(profile.FullName || "F").charAt(0).toUpperCase()}
                         </div>
                     </div>
 
@@ -52,81 +88,108 @@ const Profile = () => {
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
                             <div>
                                 <h2 className="text-xl font-bold text-slate-900 dark:text-slate-50 m-0">
-                                    @{username}
+                                    {profile.FullName || "Community Member"}
                                 </h2>
                                 <span className="text-xs text-purple-600 dark:text-purple-400 font-semibold">
-                                    Community Creator
+                                    @{profile.Username || "user"} • Creator
                                 </span>
                             </div>
-                            <Link
-                                to="/create-post"
-                                className="inline-flex items-center justify-center px-4 py-1.5 rounded-xl text-xs font-semibold bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-xs hover:opacity-95 self-center sm:self-auto"
-                            >
-                                + Share Photo
-                            </Link>
+                            <div className="flex items-center gap-2 self-center sm:self-auto">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setFormData({
+                                            username: profile.Username || "",
+                                            fullName: profile.FullName || "",
+                                            bio: profile.Bio || "",
+                                        });
+                                        setIsEditing(!isEditing);
+                                    }}
+                                    className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-200 transition-colors cursor-pointer"
+                                >
+                                    {isEditing ? "Close" : "✏️ Edit Profile"}
+                                </button>
+                                <Link
+                                    to="/create-post"
+                                    className="inline-flex items-center justify-center px-4 py-1.5 rounded-xl text-xs font-semibold bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-xs hover:opacity-95"
+                                >
+                                    + Share Photo
+                                </Link>
+                            </div>
                         </div>
 
-                        {/* Stats Counts */}
+                        {/* Real-time Dynamic Stats Calculated from Database */}
                         <div className="flex items-center justify-center sm:justify-start gap-6 py-2 my-2 border-y border-slate-100 dark:border-slate-700 text-center sm:text-left">
                             <div>
                                 <strong className="block text-base font-bold text-slate-900 dark:text-slate-100">
                                     {posts.length}
                                 </strong>
-                                <span className="text-xs text-slate-500">Posts</span>
+                                <span className="text-xs text-slate-500">Posts Shared</span>
                             </div>
                             <div>
                                 <strong className="block text-base font-bold text-slate-900 dark:text-slate-100">
                                     {totalLikes}
                                 </strong>
-                                <span className="text-xs text-slate-500">Likes Earned</span>
+                                <span className="text-xs text-slate-500">Likes Received</span>
                             </div>
                             <div>
                                 <strong className="block text-base font-bold text-slate-900 dark:text-slate-100">
-                                    1.2k
+                                    {totalComments}
                                 </strong>
-                                <span className="text-xs text-slate-500">Followers</span>
+                                <span className="text-xs text-slate-500">Total Comments</span>
                             </div>
                         </div>
 
-                        {/* Bio & Editable Profile Description */}
-                        {isEditingBio ? (
-                            <form onSubmit={handleSaveBio} className="mt-3 flex flex-col gap-2">
+                        {/* Bio & Form */}
+                        {isEditing ? (
+                            <form onSubmit={handleSaveProfile} className="mt-3 flex flex-col gap-2.5">
+                                <div className="grid grid-cols-2 gap-2">
+                                    <input
+                                        type="text"
+                                        placeholder="Full Name"
+                                        value={formData.fullName}
+                                        onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                                        className="p-2 text-xs bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 rounded-lg border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-1 focus:ring-purple-500"
+                                        required
+                                    />
+                                    <input
+                                        type="text"
+                                        placeholder="Username"
+                                        value={formData.username}
+                                        onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                                        className="p-2 text-xs bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 rounded-lg border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-1 focus:ring-purple-500"
+                                        required
+                                    />
+                                </div>
                                 <textarea
-                                    value={bioDraft}
-                                    onChange={(e) => setBioDraft(e.target.value)}
+                                    value={formData.bio}
+                                    onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
                                     rows="2"
+                                    maxLength="300"
                                     className="w-full p-2 text-xs bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 rounded-lg border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-1 focus:ring-purple-500"
-                                    placeholder="Tell the community about yourself..."
+                                    placeholder="Write your bio..."
+                                    required
                                 />
                                 <div className="flex gap-2 justify-end">
                                     <button
                                         type="button"
-                                        onClick={() => setIsEditingBio(false)}
+                                        onClick={() => setIsEditing(false)}
                                         className="px-3 py-1 text-xs rounded-lg text-slate-600 bg-slate-100 dark:bg-slate-700"
                                     >
                                         Cancel
                                     </button>
                                     <button
                                         type="submit"
-                                        className="px-3 py-1 text-xs font-semibold rounded-lg bg-purple-600 text-white"
+                                        disabled={saving}
+                                        className="px-3 py-1 text-xs font-semibold rounded-lg bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-50"
                                     >
-                                        Save Bio
+                                        {saving ? "Saving..." : "Save to Database"}
                                     </button>
                                 </div>
                             </form>
                         ) : (
-                            <div className="mt-2 text-xs text-slate-600 dark:text-slate-300 flex items-start justify-between gap-2">
-                                <p className="m-0 leading-relaxed">{bio}</p>
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        setBioDraft(bio);
-                                        setIsEditingBio(true);
-                                    }}
-                                    className="text-purple-600 hover:underline flex-shrink-0 text-xs cursor-pointer"
-                                >
-                                    Edit
-                                </button>
+                            <div className="mt-2 text-xs text-slate-600 dark:text-slate-300">
+                                <p className="m-0 leading-relaxed">{profile.Bio}</p>
                             </div>
                         )}
                     </div>

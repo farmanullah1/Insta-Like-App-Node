@@ -169,6 +169,44 @@ async function deleteComment(commentId) {
     return result.rowsAffected[0] > 0;
 }
 
+// ---------- User Profile Operations ----------
+
+// Get current user profile
+async function getUserProfile() {
+    const pool = await getConnection();
+    const result = await pool.request().query(`
+        SELECT TOP 1 id, Username, FullName, Bio, AvatarUrl, UpdatedAt
+        FROM UserProfile
+        ORDER BY id ASC
+    `);
+    return result.recordset[0] || null;
+}
+
+// Update user profile
+async function updateUserProfile({ username, fullName, bio, avatarUrl }) {
+    const pool = await getConnection();
+    const request = pool.request();
+    request.input('username', sql.NVarChar(50), username);
+    request.input('fullName', sql.NVarChar(100), fullName);
+    request.input('bio', sql.NVarChar(300), bio);
+    request.input('avatarUrl', sql.NVarChar(sql.MAX), avatarUrl || null);
+
+    const result = await request.query(`
+        UPDATE UserProfile
+        SET Username = COALESCE(@username, Username),
+            FullName = COALESCE(@fullName, FullName),
+            Bio = COALESCE(@bio, Bio),
+            AvatarUrl = COALESCE(@avatarUrl, AvatarUrl),
+            UpdatedAt = GETDATE()
+        WHERE id = 1;
+
+        SELECT TOP 1 id, Username, FullName, Bio, AvatarUrl, UpdatedAt
+        FROM UserProfile
+        WHERE id = 1;
+    `);
+    return result.recordset[0] || null;
+}
+
 // ---------- Export all functions ----------
 module.exports = {
     createPost,
@@ -180,4 +218,6 @@ module.exports = {
     getCommentsByPostId,
     addComment,
     deleteComment,
+    getUserProfile,
+    updateUserProfile,
 };
