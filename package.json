@@ -1,0 +1,11 @@
+{
+  "name": "insta-like-project-root",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "deploy": "npm --prefix frontend run deploy",
+    "build": "npm --prefix frontend run build",
+    "frontend:dev": "npm --prefix frontend run dev",
+    "backend:dev": "npm --prefix backend run dev"
+  }
+}
