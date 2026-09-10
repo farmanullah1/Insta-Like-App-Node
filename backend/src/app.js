@@ -5,44 +5,84 @@ const multer = require('multer');
 const postModel = require('./models/post.model');
 const { uploadImage } = require('./servicers/storage.service');
 
+// Middleware
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
-
-const upload = multer({
-    storage: multer.memoryStorage(),
-    limits: { fileSize: 10 * 1024 * 1024 }
-});
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// Minimal Request Logger
+app.use((req, res, next) => {
+    const start = Date.now();
+    res.on('finish', () => {
+        const duration = Date.now() - start;
+        console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl} - ${res.statusCode} (${duration}ms)`);
+    });
+    next();
+});
+
+// Configure Multer with strict image MIME filter
+const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+    fileFilter: (req, file, cb) => {
+        if (file.mimetype.startsWith('image/')) {
+            cb(null, true);
+        } else {
+            cb(new Error('Only image files (JPG, PNG, WEBP) are permitted'), false);
+        }
+    }
+});
+
+// ---------- Health & Info Routes ----------
+app.get('/health', (req, res) => {
+    res.status(200).json({
+        status: 'ok',
+        uptime: process.uptime(),
+        timestamp: new Date().toISOString(),
+        service: 'InstaLike API'
+    });
+});
+
+app.get('/', (req, res) => {
+    res.json({
+        message: 'Welcome to the InstaLike API',
+        endpoints: {
+            posts: '/posts',
+            health: '/health'
+        }
+    });
+});
+
+// ---------- Posts Routes ----------
+
+// Create a new post
 app.post('/posts', upload.any(), async (req, res) => {
     try {
-        const caption = req.body?.caption;
+        const caption = req.body?.caption?.trim();
 
-        // Accept file under 'Post_Image', 'image', or any uploaded file
         const uploadedFile = req.files?.find(f => f.fieldname === 'Post_Image' || f.fieldname === 'image') || req.files?.[0];
 
         let imageBuffer;
         if (uploadedFile) {
-            imageBuffer = uploadedFile.buffer; // multer memoryStorage provides a direct Buffer
+            imageBuffer = uploadedFile.buffer;
         } else if (req.body?.imageBase64) {
             imageBuffer = Buffer.from(req.body.imageBase64, 'base64');
         }
 
         if (!caption || !imageBuffer) {
             return res.status(400).json({
-                error: 'Missing caption or image. Attach an image file or provide "imageBase64".'
+                error: 'Both caption and an image file (or imageBase64) are required.'
             });
         }
 
-        // Upload to ImageKit and log URL to terminal
         const fileName = uploadedFile?.originalname || `post_${Date.now()}.jpg`;
         const uploadResult = await uploadImage(imageBuffer, fileName);
 
         const newPost = await postModel.createPost(imageBuffer, caption, uploadResult.url);
         res.status(201).json(newPost);
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Internal server error' });
+        console.error('Error creating post:', error);
+        res.status(500).json({ error: error.message || 'Internal server error while creating post' });
     }
 });
 

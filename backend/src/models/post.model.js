@@ -27,27 +27,45 @@ async function createPost(imageBuffer, caption, imageUrl = null) {
     return result.recordset[0];
 }
 
-// Get all posts ordered by newest first
+// Get all posts ordered by newest first with comment counts
 async function getAllPosts() {
     const pool = await getConnection();
     const result = await pool.request().query(`
-        SELECT id, Caption, Image_Url, Likes, CreatedAt, Post_Image
-        FROM Posts
-        ORDER BY id DESC
+        SELECT 
+            p.id, 
+            p.Caption, 
+            p.Image_Url, 
+            p.Likes, 
+            p.CreatedAt, 
+            p.Post_Image,
+            COUNT(c.id) AS CommentsCount
+        FROM Posts p
+        LEFT JOIN Comments c ON p.id = c.PostId
+        GROUP BY p.id, p.Caption, p.Image_Url, p.Likes, p.CreatedAt, p.Post_Image
+        ORDER BY p.id DESC
     `);
     return result.recordset;
 }
 
-// Get a single post by id
+// Get a single post by id with comment count
 async function getPostById(id) {
     const pool = await getConnection();
     const request = pool.request();
     request.input('id', sql.Int, id);
 
     const result = await request.query(`
-        SELECT id, Caption, Image_Url, Likes, CreatedAt, Post_Image
-        FROM Posts
-        WHERE id = @id
+        SELECT 
+            p.id, 
+            p.Caption, 
+            p.Image_Url, 
+            p.Likes, 
+            p.CreatedAt, 
+            p.Post_Image,
+            COUNT(c.id) AS CommentsCount
+        FROM Posts p
+        LEFT JOIN Comments c ON p.id = c.PostId
+        WHERE p.id = @id
+        GROUP BY p.id, p.Caption, p.Image_Url, p.Likes, p.CreatedAt, p.Post_Image
     `);
     return result.recordset[0] || null;
 }
