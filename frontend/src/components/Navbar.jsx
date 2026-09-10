@@ -7,7 +7,7 @@ const Navbar = () => {
     return (
         <header className="app-navbar">
             <div className="nav-container">
-                <Link to="/feed" className="brand-logo">
+                <Link to="/feed" className="brand-logo" title="InstaLike Home">
                     <span className="brand-icon">📸</span>
                     <span className="brand-name">InstaLike</span>
                 </Link>
@@ -16,6 +16,7 @@ const Navbar = () => {
                     <Link
                         to="/feed"
                         className={`nav-btn ${location.pathname === "/feed" ? "active" : ""}`}
+                        title="Feed"
                     >
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
@@ -27,6 +28,7 @@ const Navbar = () => {
                     <Link
                         to="/create-post"
                         className={`nav-btn post-action-btn ${location.pathname === "/create-post" ? "active" : ""}`}
+                        title="Create New Post"
                     >
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <rect width="18" height="18" x="3" y="3" rx="2"/>
